@@ -1,0 +1,89 @@
+services:
+  envoy:
+    network_mode: "host"
+    image: envoyproxy/envoy:v1.37-latest
+    container_name: envoy
+    volumes:
+      - ./envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
+      - ./envoy/certs:/etc/envoy/certs:ro
+    #ports:
+      #- "80:8080"
+    depends_on:
+      - opa
+      - crypto-service
+    #networks:
+      #- envoy-mesh
+    restart: unless-stopped
+
+  opa:
+    image: openpolicyagent/opa:latest-envoy
+    container_name: opa
+    volumes:
+      - ./opa:/policy:ro
+    command:
+      - run
+      - --server
+      - --config-file=/policy/opa-config.yaml
+      - /policy
+    ports:
+      - "127.0.0.1:9191:9191"
+    networks:
+      - envoy-mesh
+    restart: unless-stopped
+
+  crypto-service:
+    build:
+      context: ./crypto-service
+    container_name: crypto-service         
+    ports:
+       - "8082:8082"
+    networks:
+      - envoy-mesh
+    restart: unless-stopped
+# 1. 中介服務 (你的 Flask App)
+  db_pass_service:
+    build: ./db_pass  # 假設你的 Flask 代碼在 db_pass 資料夾
+    container_name: db_pass
+    ports:
+      - "5000:5000"
+    depends_on:
+      - postgres
+    networks:
+      - envoy-mesh
+
+  # 2. 資料庫 (PostgreSQL)
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    restart: always
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: "**ncu112502535postgredb**" # 配合你 app.py 的設定
+      POSTGRES_DB: crypto_db
+    volumes:
+      # 資料持久化 (重開機資料還在)
+      - postgres_data:/var/lib/postgresql/data
+      # 初始化腳本 (自動建表)
+      - ./sql_init.sql:/docker-entrypoint-initdb.d/sql_init.sql
+    networks:
+      - envoy-mesh
+
+  # 3. 監控儀表板 (Grafana)
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000" # Grafana 預設跑在 3000 port
+    depends_on:
+      - postgres
+    networks:
+      - envoy-mesh
+
+networks:
+  envoy-mesh:
+    driver: bridge
+
+volumes:
+  postgres_data:
