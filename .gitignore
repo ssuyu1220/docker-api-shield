@@ -1,0 +1,3 @@
+*.json
+envoy/certs/*
+.env
