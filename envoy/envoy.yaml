@@ -176,6 +176,11 @@ static_resources:
                         key: "x-ja3-fingerprint"
                         value: "%TLS_JA3_FINGERPRINT%"
                       append_action: OVERWRITE_IF_EXISTS_OR_ADD
+                  - append:
+                      header:
+                        key: "x-ja4-fingerprint"
+                        value: "%TLS_JA4_FINGERPRINT%"
+                      append_action: OVERWRITE_IF_EXISTS_OR_ADD
           # 1. Crypto Analysis (Lua)
           - name: envoy.filters.http.lua
             typed_config:
@@ -187,6 +192,7 @@ static_resources:
                   local method = headers:get(":method")
                   local original_path = headers:get(":path")
                   local ja3_hash = headers:get("x-ja3-fingerprint") or "unknown"
+                  local ja4_hash = headers:get("x-ja4-fingerprint") or "unknown"
 
                   if method ~= "POST" then
                     return
@@ -207,7 +213,8 @@ static_resources:
                       [":authority"] = "crypto-service",
                       ["content-type"] = "application/json",
                       ["x-original-path"] = original_path, -- 傳遞原始路徑
-                      ["x-ja3-fingerprint"] = ja3_hash
+                      ["x-ja3-fingerprint"] = ja3_hash,
+                      ["x-ja4-fingerprint"] = ja4_hash
                     },
                     body_str,
                     5000

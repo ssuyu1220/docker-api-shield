@@ -40,8 +40,8 @@ services:
     networks:
       - envoy-mesh
     restart: unless-stopped
-# 1. 中介服務 (你的 Flask App)
-  db_pass_service:
+
+  db_pass:
     build: ./db_pass  # 假設你的 Flask 代碼在 db_pass 資料夾
     env_file:
       - .env
@@ -76,12 +76,24 @@ services:
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
+    env_file:
+      - .env
     ports:
       - "3000:3000" # Grafana 預設跑在 3000 port
     depends_on:
       - postgres
     networks:
       - envoy-mesh
+    volumes:
+      # 1. 掛載資料庫連線設定
+      - ./grafana-config/datasources/datasource.yaml:/etc/grafana/provisioning/datasources/datasource.yaml
+      # 2. 掛載儀表板讀取路徑設定
+      - ./grafana-config/dashboards/dashboards.yaml:/etc/grafana/provisioning/dashboards/dashboards.yaml
+      # 3. 實際存放 JSON 檔案的地方
+      - ./grafana-config/dashboards/dashboard1.json:/var/lib/grafana/dashboards/my_waf_dashboard.json
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true  # 免登入直接看，交作業好用
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
   
   llm-analyzer:
     build: ./llm_analyzer  # 建立一個新的資料夾放這支程式
@@ -100,4 +112,5 @@ networks:
 
 volumes:
   postgres_data:
+  grafana_data:
 

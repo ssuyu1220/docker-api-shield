@@ -25,26 +25,27 @@ log_result(code, denys) := true if {
     ja4_fingerprint := object.get(input.attributes.request.http.headers, "x-ja4-fingerprint", "unknown")
     raw_payload := object.get(input.attributes.request.http, "body", "")
     req_path := object.get(input.attributes.request.http, "path", "unknown")
-    
-    # 呼叫上面的安全函式
     decode_snippets := get_snippets(input.attributes.request.http.headers)
-    
+
+    req_body := {
+        "client_ip": client_ip, 
+        "ja3_fingerprint": ja3_fingerprint,
+        "ja4_fingerprint": ja4_fingerprint,
+        "path": req_path,
+        "response_code": code,
+        "deny_report": denys,
+        "decode_snippets": decode_snippets,
+        "original_packet": raw_payload
+    }
+
     print("======== [OPA DEBUG] 發送 LOG 到 DB ========")
-    
+    print("發送內容:", req_body)
+
     response := http.send({
         "method": "POST",
         "url": url,
         "headers": {"Content-Type": "application/json"},
-        "body": {
-            "client_ip": client_ip, 
-            "ja3_fingerprint": ja3_fingerprint,
-            "ja4_fingerprint": ja4_fingerprint,
-            "path": req_path,
-            "response_code": code,
-            "deny_report": denys,
-            "decode_snippets": decode_snippets,
-            "original_packet": raw_payload
-        },
+        "body": req_body,
         "timeout": "1s"
     })
     

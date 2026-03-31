@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: 'Dashboards'
+    orgId: 1
+    folder: 'Grafana_dashboards'
+    type: file
+    disableDeletion: false
+    editable: true
+    options:
+      path: /var/lib/grafana/dashboards  # 這是 Docker 內部的路徑

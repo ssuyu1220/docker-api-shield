@@ -1,0 +1,13 @@
+apiVersion: 1
+
+datasources:
+  - name: postgres
+    uid: ffgwt6is0acxsd
+    type: postgres
+    url: postgres:5432  # 或是你的 DB 容器名稱
+    user: ${POSTGRES_USER}
+    secureJsonData:
+      password: ${POSTGRES_PASSWORD}
+    jsonData:
+      database: crypto_db
+      sslmode: 'disable'

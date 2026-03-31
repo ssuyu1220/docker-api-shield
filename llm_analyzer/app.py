@@ -4,6 +4,8 @@ import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import json
+import markdown
+import html
 
 app = Flask(__name__)
 CORS(app)
@@ -48,7 +50,7 @@ def reply(log_id):
     response = client.chat.completions.create(model=f"{provider}:{model}", messages=messages)
     #print(prompt)
     #print(response.choices[0].message.content)
-    return response.choices[0].message.content
+    return response.choices[0].message.content,prompt
 
 
  
@@ -87,13 +89,23 @@ def prompt_generator(log_id):
 - **防禦決策**: {"🟢 放行 (ALLOW)" if decision else "🔴 阻擋 (DENY)"}
 
 #### 🛑 阻擋理由 (OPA Report):
+
+```json
 {json.dumps(deny, indent=2, ensure_ascii=False)}
+```
 
 #### 🔍 惡意解碼片段 (Malicious Snippets):
+
+```json
 {json.dumps(snippets, indent=2, ensure_ascii=False) if snippets else "無解碼片段"}
+```
 
 #### 📦 原始請求內容:
+
+```json
 {json.dumps(raw, indent=2, ensure_ascii=False)}
+```
+
 ---
 """
             formatted_output.append(log_entry)
@@ -108,9 +120,70 @@ def prompt_generator(log_id):
 
 @app.route('/analyze/<int:log_id>', methods=['GET'])
 def analyze_event(log_id):
-    return jsonify({
-        "analysis_report": reply(log_id),
-    })
+    result_md, prompt = reply(log_id)
+    print("prompt: ",prompt, flush=True)
+    request_html_content = markdown.markdown(
+        prompt,
+        extensions=["fenced_code", "tables"]
+    )
+    # Markdown → HTML
+    result_html_content = markdown.markdown(
+        result_md,
+        extensions=["fenced_code", "tables"]
+    )
 
+    return f"""
+    <html>
+    <head>
+        <title>LLM Security Analysis</title>
+        <style>
+            body {{
+                font-family: Arial, sans-serif;
+                padding: 30px;
+                background-color: #0f172a;
+                color: #e2e8f0;
+                line-height: 1.6;
+            }}
+            h1, h2, h3 {{
+                color: #38bdf8;
+            }}
+            pre {{
+                background: #1e293b;
+                padding: 10px;
+                border-radius: 6px;
+                overflow-x: auto;
+            }}
+            code {{
+                color: #facc15;
+            }}
+            .container {{
+                max-width: 900px;
+                margin: auto;
+            }}
+            .badge {{
+                padding: 5px 10px;
+                border-radius: 5px;
+                font-weight: bold;
+            }}
+            .high {{ background: red; }}
+            .medium {{ background: orange; }}
+            .low {{ background: green; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>🔍 Security Analysis Report</h1>
+            <p>Log ID: {log_id}</p>
+            <hr>
+            {request_html_content}
+            <hr>
+            <hr>
+            {result_html_content}
+            <hr>
+            <a href="http://192.168.3.110:3000">⬅ Back to Grafana</a>
+        </div>
+    </body>
+    </html>
+    """
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001, debug=False)

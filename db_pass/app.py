@@ -4,6 +4,8 @@ import psycopg2
 import os
 import json
 import datetime
+import time
+import threading
 
 app = Flask(__name__)
 
@@ -69,6 +71,37 @@ def save_to_db():
     except Exception as e:
         print(f"DB Error: {e}")
         return "Error", 500
-
+    
+def auto_cleanup_db():
+    print("[DB-PASS] Start daily cleaning", flush=True)
+    while True:
+        # 每天執行一次 (86400秒)
+        #time.sleep(86400) 
+        time.sleep(10)
+        conn = None
+        try:
+            conn = psycopg2.connect(
+                host="postgres",
+                database="crypto_db",
+                user=DB_USER,
+                password=DB_PASS,
+            )
+            cur = conn.cursor()
+            
+            # 刪除 7 天前的資料
+            delete_query = "DELETE FROM security_logs WHERE timestamp < NOW() - INTERVAL '7 days';"
+            cur.execute(delete_query)
+            conn.commit()
+            
+            deleted_rows = cur.rowcount
+            print(f"[DELETE] delete {deleted_rows} out of date records", flush=True)
+            
+            cur.close()
+        except Exception as e:
+            print(f"[ERROR] error: {e}", flush=True)
+        finally:
+            if conn:
+                conn.close()
 if __name__ == '__main__':
+    threading.Thread(target=auto_cleanup_db, daemon=True).start()
     app.run(host='0.0.0.0', port=5000)
