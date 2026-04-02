@@ -9,8 +9,10 @@ GROQ_API_KEY=your_groq_api_key
 ```
 ### 2. 設定 NAT
 此服務預設部屬於兩個 port，分別是
-8443 port：有開啟 TLS
-8080 port：無開啟 TLS
+
+* 8443 port：有開啟 TLS
+* 8080 port：無開啟 TLS
+
 因此需將欲受保護的系統設定為會經過其中一個
 
 ### 3. 使用 Docker 部屬與啟動服務
