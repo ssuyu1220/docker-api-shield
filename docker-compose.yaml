@@ -5,7 +5,7 @@ services:
     container_name: envoy
     volumes:
       - ./envoy/envoy.yaml:/etc/envoy/envoy.yaml:ro
-      - ./envoy/certs:/etc/envoy/certs:ro
+      - ./certs:/etc/envoy/certs:ro
     #ports:
       #- "80:8080"
     depends_on:

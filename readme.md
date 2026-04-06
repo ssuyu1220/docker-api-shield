@@ -9,7 +9,16 @@ POSTGRES_USER=your_database_user_name
 POSTGRES_PASSWORD=your_database_user_password
 GROQ_API_KEY=your_groq_api_key
 ```
-### 2. 設定 NAT
+### 2. 建立憑證資料夾
+在專案根目錄建立 `certs/` 資料夾，並放入憑證如：server.crt 以及 server.key
+
+或直接使用以下指令建立資料夾及生成憑證
+```
+mkdir -p certs
+openssl req -x509 -newkey rsa:4096 -keyout certs/server.key -out certs/server.crt -days 365 -nodes -subj "/CN=localhost"
+```
+
+### 3. 設定 NAT
 此服務預設部屬於兩個 port，分別是
 
 * 8443 port：有開啟 TLS
@@ -17,7 +26,7 @@ GROQ_API_KEY=your_groq_api_key
 
 因此需將欲受保護的系統設定為會經過其中一個
 
-### 3. 使用 Docker 部屬與啟動服務
+### 4. 使用 Docker 部屬與啟動服務
 執行以下指令編譯並啟動所有服務
 ```
 sudo docker compose up -d --build
