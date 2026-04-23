@@ -276,6 +276,16 @@ static_resources:
     type: ORIGINAL_DST
     connect_timeout: 5s
     lb_policy: CLUSTER_PROVIDED # 這是固定搭配，不能換
+    upstream_bind_config:
+      source_address:
+        address: "0.0.0.0"
+        port_value: 0
+      socket_options:
+        - description: "蓋上 1337 避免本機迴圈"
+          level: 1         # SOL_SOCKET
+          name: 36         # SO_MARK
+          int_value: 1337  # 必須與 iptables 的 --mark 一致
+          state: STATE_PREBIND
 
   - name: crypto_service
     connect_timeout: 5s

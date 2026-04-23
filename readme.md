@@ -26,6 +26,22 @@ openssl req -x509 -newkey rsa:4096 -keyout certs/server.key -out certs/server.cr
 
 因此需將欲受保護的系統設定為會經過其中一個
 
+#### 設定範例
+以下幾個指令皆可彼此搭配使用，沒有限制一次只能一條規則生效
+
+1. 僅限制外部(PREROUTING)對 2375 port 發送的 TCP 請求需轉發至此系統的 8443 port (本機自身對自身的請求不會被轉發)
+```bash
+sudo iptables -t nat -A PREROUTING -p tcp --dport 2375 -j REDIRECT --to-ports 8443
+```
+2. 僅限制內部(OUTPUT)對 2375 port 發送的 TCP 請求需轉發至此系統的 8443 port，為避免無限迴圈，僅限制沒有被 envoy 加上 1337 標籤的才做轉發
+```bash
+sudo iptables -t nat -A OUTPUT -p tcp --dport 2375 -m mark ! --mark 1337 -j REDIRECT --to-ports 8443
+```
+3. 僅限制外部(PREROUTING)且由網卡 ens18 進入，對 192.168.3.0/24 此一網段中的任意 ip 的 2375 port 發送的 TCP 請求轉發至此系統的 8443 port (本機自身對自身的請求不會被轉發)
+```bash
+sudo iptables -t nat -A PREROUTING -i ens18 -d 192.168.3.0/24 -p tcp --dport 2375 -j REDIRECT --to-port 8443
+```
+
 ### 4. 使用 Docker 部屬與啟動服務
 執行以下指令編譯並啟動所有服務
 ```
@@ -47,6 +63,8 @@ sudo docker compose up -d --build
 提供 AI 分析請求、crypto-service 提供的報告的功能
 ### Grafana
 利用 PostgreSQL 內的資訊提供視覺化面板，並提供呼叫 LLM-analyzer 的功能 
+
+**此視覺化面板位於 3000 port**
 
 ## 功能與特色
 

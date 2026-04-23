@@ -1,6 +1,8 @@
 services:
   envoy:
     network_mode: "host"
+    cap_add:
+      - NET_ADMIN
     image: envoyproxy/envoy:v1.37-latest
     container_name: envoy
     volumes:
