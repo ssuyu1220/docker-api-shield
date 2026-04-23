@@ -33,11 +33,7 @@ openssl req -x509 -newkey rsa:4096 -keyout certs/server.key -out certs/server.cr
 ```bash
 sudo iptables -t nat -A PREROUTING -p tcp --dport 2375 -j REDIRECT --to-ports 8443
 ```
-2. 僅限制內部(OUTPUT)對 2375 port 發送的 TCP 請求需轉發至此系統的 8443 port，為避免無限迴圈，僅限制沒有被 envoy 加上 1337 標籤的才做轉發
-```bash
-sudo iptables -t nat -A OUTPUT -p tcp --dport 2375 -m mark ! --mark 1337 -j REDIRECT --to-ports 8443
-```
-3. 僅限制外部(PREROUTING)且由網卡 ens18 進入，對 192.168.3.0/24 此一網段中的任意 ip 的 2375 port 發送的 TCP 請求轉發至此系統的 8443 port (本機自身對自身的請求不會被轉發)
+2. 僅限制外部(PREROUTING)且由網卡 ens18 進入，對 192.168.3.0/24 此一網段中的任意 ip 的 2375 port 發送的 TCP 請求轉發至此系統的 8443 port (本機自身對自身的請求不會被轉發)
 ```bash
 sudo iptables -t nat -A PREROUTING -i ens18 -d 192.168.3.0/24 -p tcp --dport 2375 -j REDIRECT --to-port 8443
 ```
