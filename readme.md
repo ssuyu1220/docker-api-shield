@@ -38,7 +38,38 @@ sudo iptables -t nat -A PREROUTING -p tcp --dport 2375 -j REDIRECT --to-ports 84
 sudo iptables -t nat -A PREROUTING -i ens18 -d 192.168.3.0/24 -p tcp --dport 2375 -j REDIRECT --to-port 8443
 ```
 
-### 4. 使用 Docker 部屬與啟動服務
+3. 把 envoy ip 偽裝成本機 ip
+若發生 `curl: (56) Recv failure: Connection reset by peer` ，可能是因回傳的 ip (envoy 的 ip) 與原先請求的目標 ip 不同，因此需進行偽裝
+```bash
+sudo iptables -t nat -A POSTROUTING -j MASQUERADE
+```
+
+4. 在本機自身對自身請求的過程中，限制 uid 不為 1337 (envoy 的 uid)，才進行將對於 2375 port 轉到 8443 port，避免轉發造成的無限迴圈
+```bash
+sudo iptables -t nat -A OUTPUT -p tcp --dport 2375 -m owner ! --uid-owner 1337 -j REDIRECT --to-ports 8443
+```
+
+### 4. 確認視覺化面板需求
+因 Grafana 提供彈性，可自由設計的介面，此系統目前只提供一模板，若需直接使用此模板連接 LLM 分析的功能需將以下內容的 ip ，改為當前部屬得機器之 ip 
+```bash
+# docker-api-shield/grafana-config/dashboards/dashboard1.json
+# 以下約在第 73 行，將 192.168.3.110 改為當前部屬得機器之 ip
+"url": "http://192.168.3.110/analyze/${__data.fields.id}"
+```
+以下提供資料庫內容，以方便設計
+
+| 欄位名稱 (`Field`) | 資料型態 (`Type`) | 中文對應與說明 |
+| :--- | :--- | :--- |
+| **`source_ip`** | `VARCHAR(50)` | **來源 IP 位址** (發動請求的客戶端或攻擊者 IP) |
+| **`req_path`** | `VARCHAR(50)` | **請求路徑** (被存取的 API 端點，例如 `/analyze`) |
+| **`ja3_fingerprint`** | `VARCHAR(32)` | **JA3 指紋** (TLS 握手特徵碼，用於識別特定惡意軟體或爬蟲) |
+| **`ja4_fingerprint`** | `VARCHAR(64)` | **JA4 指紋** (新一代的網路特徵指紋標準) |
+| **`decision`** | `BOOLEAN` | **判定結果** (OPA 或防禦邏輯的最終決定，例如放行或阻擋) |
+| **`deny_report`** | `JSONB` | **阻擋報告** (記錄詳細的阻擋原因、觸發的資安規則等結構化資料) |
+| **`decoded_snippets`** | `JSONB` | **解碼片段** (攔截並解碼後的內容，例如被解開的 Base64 惡意指令碼) |
+| **`raw_data`** | `JSONB` | **原始資料** (完整的 HTTP 請求或封包原始內容，供後續鑑識用) |
+
+### 5. 使用 Docker 部屬與啟動服務
 執行以下指令編譯並啟動所有服務
 ```
 sudo docker compose up -d --build

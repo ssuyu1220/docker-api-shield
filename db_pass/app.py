@@ -35,7 +35,7 @@ def save_to_db():
         client_ip = data.get('client_ip')
         ja3_fingerprint = data.get('ja3_fingerprint', 'unknown')
         ja4_fingerprint = data.get('ja4_fingerprint', 'unknown')
-        print(ja4_fingerprint)
+        req_path = data.get('path', 'unknown')
         response_code = data.get('response_code')
         deny_report_json = json.dumps(data.get('deny_report', []))
         print(deny_report_json, flush=True)
@@ -51,8 +51,8 @@ def save_to_db():
 
                 insert_sql = """
                     INSERT INTO security_logs 
-                    (timestamp, source_ip, ja3_fingerprint, ja4_fingerprint, decision, deny_report, decoded_snippets, raw_data)
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                    (timestamp, source_ip, ja3_fingerprint, ja4_fingerprint, decision, deny_report, decoded_snippets, raw_data, req_path)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """
                 
                 cur.execute(insert_sql, (
@@ -63,7 +63,8 @@ def save_to_db():
                     decision, 
                     deny_report_json,
                     decoded_snippets_json,
-                    raw_data_json
+                    raw_data_json,
+                    req_path
                 ))
 
         return "Saved", 200

@@ -32,7 +32,10 @@ static_resources:
                   timeout: 0s
 
           http_filters:
-          
+          - name: envoy.filters.http.buffer
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.http.buffer.v3.Buffer
+              max_request_bytes: 65536
           # 1. 【Crypto Service Analysis】 (Lua)
           - name: envoy.filters.http.lua
             typed_config:
@@ -223,7 +226,7 @@ static_resources:
                       ["x-ja4-fingerprint"] = ja4_hash
                     },
                     body_str,
-                    5000
+                    30000
                   )
 
                   -- 如果分析服務掛了，你可以選擇 Fail Open (放行) 或 Fail Closed (阻擋)
