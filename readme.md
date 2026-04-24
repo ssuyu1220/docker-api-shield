@@ -39,6 +39,7 @@ sudo iptables -t nat -A PREROUTING -i ens18 -d 192.168.3.0/24 -p tcp --dport 237
 ```
 
 3. 把 envoy ip 偽裝成本機 ip
+
 若發生 `curl: (56) Recv failure: Connection reset by peer` ，可能是因回傳的 ip (envoy 的 ip) 與原先請求的目標 ip 不同，因此需進行偽裝
 ```bash
 sudo iptables -t nat -A POSTROUTING -j MASQUERADE
@@ -50,7 +51,7 @@ sudo iptables -t nat -A OUTPUT -p tcp --dport 2375 -m owner ! --uid-owner 1337 -
 ```
 
 ### 4. 確認視覺化面板需求
-因 Grafana 提供彈性，可自由設計的介面，此系統目前只提供一模板，若需直接使用此模板連接 LLM 分析的功能需將以下內容的 ip ，改為當前部屬得機器之 ip 
+因 Grafana 提供彈性，可自由設計的介面，此系統目前只提供一模板，若需直接使用此模板連接 LLM 分析的功能需將以下內容的 ip ，改為當前部屬機器之 ip 
 ```bash
 # docker-api-shield/grafana-config/dashboards/dashboard1.json
 # 以下約在第 73 行，將 192.168.3.110 改為當前部屬得機器之 ip
@@ -88,6 +89,8 @@ sudo docker compose up -d --build
 儲存資訊
 ### LLM-analyzer
 提供 AI 分析請求、crypto-service 提供的報告的功能
+
+**此視覺化面板位於 5001 port，可透過 http://{your_ip}:5001/analyze/{id} 來呼叫 LLM 對資料庫紀錄的第 {id} 筆資料進行分析**
 ### Grafana
 利用 PostgreSQL 內的資訊提供視覺化面板，並提供呼叫 LLM-analyzer 的功能 
 
@@ -116,6 +119,4 @@ sudo docker compose up -d --build
 
 **5. AI 輔助意圖分析與視覺化監控 (AI-Powered Analysis & Visualization)**
 *   **LLM 意圖翻譯：** 引入大型語言模型 (LLM) 針對被攔截的 Payload 進行深度語義分析，將複雜的惡意指令轉化為人類可讀的自然語言報告，降低資安人員的分析門檻。
-*   **Grafana 即時儀表板：** 提供多維度的數據監控面板，結合 PostgreSQL 資料庫即時展示：
-    *   整體 API 流量趨勢與攔截比例。
-    *   攻擊手法分佈（如 Base64 混淆佔比、敏感掛載頻率）。
+*   **Grafana 即時儀表板：** 提供多維度的數據監控面板，結合 PostgreSQL 資料庫即時展示攔截狀況
