@@ -1,3 +1,6 @@
-*.json
+result.json
+result_cve.json
+poc-akamai.json
+decoode.json
 envoy/certs/*
 .env

@@ -1,0 +1,11 @@
+{
+    "Image": "ubuntu:latest",
+    "Cmd": [
+        "bash"
+    ],
+    "HostConfig": {
+        "Binds": [
+            "/:/mnt/root"
+        ]
+    }
+}

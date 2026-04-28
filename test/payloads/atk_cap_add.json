@@ -1,0 +1,8 @@
+{
+    "Image": "ubuntu:latest",
+    "HostConfig": {
+        "CapAdd": [
+            "SYS_ADMIN"
+        ]
+    }
+}

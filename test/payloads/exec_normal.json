@@ -1,0 +1,8 @@
+{
+    "Cmd": [
+        "ls",
+        "-la",
+        "/var/log"
+    ],
+    "Tty": true
+}

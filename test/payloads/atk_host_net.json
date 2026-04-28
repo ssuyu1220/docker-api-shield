@@ -1,0 +1,6 @@
+{
+    "Image": "nginx:latest",
+    "HostConfig": {
+        "NetworkMode": "host"
+    }
+}

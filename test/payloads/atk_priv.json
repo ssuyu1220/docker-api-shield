@@ -1,0 +1,9 @@
+{
+    "Image": "ubuntu:latest",
+    "Cmd": [
+        "bash"
+    ],
+    "HostConfig": {
+        "Privileged": true
+    }
+}

@@ -1,0 +1,12 @@
+{
+    "Image": "alpine:latest",
+    "Cmd": [
+        "echo",
+        "hello world"
+    ],
+    "HostConfig": {
+        "NetworkMode": "bridge",
+        "Binds": [],
+        "Privileged": false
+    }
+}
