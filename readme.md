@@ -2,6 +2,24 @@
 ## 簡介
 這是一個針對暴露於公網的 Docker API 所設計的全防禦系統。本專案整合了 Envoy 代理伺服器、OPA (Open Policy Agent) 原則引擎與 AI 大型語言模型 (LLM)，旨在提供一套對現有 CI/CD 流程低干擾的防護機制。現代雲端服務為了支援自動化部署與遠端管理，往往需要將 Docker API 對外暴露。然而，傳統 WAF (Web Application Firewall) 無法有效解析 Docker API 的 Payload 結構，導致攻擊者能輕易利用 Base64 編碼混淆惡意行為，甚至掛載宿主機根目錄以奪取系統控制權。本系統從流量的邊緣層進行攔截與深度解析，有效填補了自動化便利與資安防禦間的鴻溝。
 ## 部屬方法
+### 0. 確認欲受保護的 Docker API
+Docker API 預設開啟於 2375 port，但也可以自行設定。若必要開啟，以下提供一種開啟方式
+#### 透過設定檔 `docker.service` 開啟 Docker API
+1. 利用以下指令建立並進入編輯檔案
+```
+sudo systemctl edit docker.service
+```
+2. 寫入以下內容
+```
+[Service]
+ExecStart=
+ExecStart=/usr/bin/dockerd -H fd:// -H tcp://0.0.0.0:2375
+```
+3. 依序執行以下指令重新載入 systemd 設定並重啟 Docker
+```
+sudo systemctl daemon-reload
+sudo systemctl restart docker
+```
 ### 1. 設定環境變數
 在專案根目錄建立 `.env` 檔案，並設定資料庫使用者名稱跟密碼、Qroq API KEY：
 ```

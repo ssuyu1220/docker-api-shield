@@ -11,7 +11,7 @@
 1. 賦予測試執行權限
 
 ```bash
-chmod +x test_script.bash
+chmod +x test_script.sh
 ```
 
 2. 進入程式設定測試目標
