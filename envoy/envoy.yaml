@@ -36,6 +36,33 @@ static_resources:
             typed_config:
               "@type": type.googleapis.com/envoy.extensions.filters.http.buffer.v3.Buffer
               max_request_bytes: 65536
+
+          - name: envoy.filters.http.header_mutation
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.http.header_mutation.v3.HeaderMutation
+              mutations:
+                request_mutations:
+                  - append:  # 👇 就是漏了這一層「動作聲明」！
+                      header:
+                        key: "x-ja3-fingerprint"
+                        value: "%TLS_JA3_FINGERPRINT%"
+                      append_action: OVERWRITE_IF_EXISTS_OR_ADD
+                  - append:
+                      header:
+                        key: "x-ja4-fingerprint"
+                        value: "%TLS_JA4_FINGERPRINT%"
+                      append_action: OVERWRITE_IF_EXISTS_OR_ADD
+                  - append:
+                      header:
+                        key: "x-dest-ip"
+                        value: "%DOWNSTREAM_LOCAL_ADDRESS_WITHOUT_PORT%"
+                      append_action: OVERWRITE_IF_EXISTS_OR_ADD
+                      
+                  - append:
+                      header:
+                        key: "x-dest-port"
+                        value: "%DOWNSTREAM_LOCAL_PORT%"
+                      append_action: OVERWRITE_IF_EXISTS_OR_ADD
           # 1. 【Crypto Service Analysis】 (Lua)
           - name: envoy.filters.http.lua
             typed_config:
@@ -45,7 +72,8 @@ static_resources:
                   local headers = request_handle:headers()
                   local method = headers:get(":method")
                   local original_path = headers:get(":path")
-
+                  local dest_ip = headers:get("x-dest-ip") or "unknown"
+                  local dest_port = headers:get("x-dest-port") or "unknown"
                   if method ~= "POST" then
                     return
                   end
@@ -64,6 +92,8 @@ static_resources:
                       [":path"] = "/analyze",
                       [":authority"] = "crypto-service",
                       ["content-type"] = "application/json",
+                      ["x-dest-ip"] = dest_ip,
+                      ["x-dest-port"] = dest_port,
                       ["x-original-path"] = original_path -- 傳遞原始路徑
                     },
                     body_str,
@@ -190,6 +220,17 @@ static_resources:
                         key: "x-ja4-fingerprint"
                         value: "%TLS_JA4_FINGERPRINT%"
                       append_action: OVERWRITE_IF_EXISTS_OR_ADD
+                  - append:
+                      header:
+                        key: "x-dest-ip"
+                        value: "%DOWNSTREAM_LOCAL_ADDRESS_WITHOUT_PORT%"
+                      append_action: OVERWRITE_IF_EXISTS_OR_ADD
+                      
+                  - append:
+                      header:
+                        key: "x-dest-port"
+                        value: "%DOWNSTREAM_LOCAL_PORT%"
+                      append_action: OVERWRITE_IF_EXISTS_OR_ADD
           # 1. Crypto Analysis (Lua)
           - name: envoy.filters.http.lua
             typed_config:
@@ -200,8 +241,11 @@ static_resources:
                   local headers = request_handle:headers()
                   local method = headers:get(":method")
                   local original_path = headers:get(":path")
+                  request_handle:logInfo("[Lua Debug] Captured original_path: " .. tostring(original_path))
                   local ja3_hash = headers:get("x-ja3-fingerprint") or "unknown"
                   local ja4_hash = headers:get("x-ja4-fingerprint") or "unknown"
+                  local dest_ip = headers:get("x-dest-ip") or "unknown"
+                  local dest_port = headers:get("x-dest-port") or "unknown"
 
                   if method ~= "POST" then
                     return
@@ -223,7 +267,9 @@ static_resources:
                       ["content-type"] = "application/json",
                       ["x-original-path"] = original_path, -- 傳遞原始路徑
                       ["x-ja3-fingerprint"] = ja3_hash,
-                      ["x-ja4-fingerprint"] = ja4_hash
+                      ["x-ja4-fingerprint"] = ja4_hash,
+                      ["x-dest-ip"] = dest_ip,
+                      ["x-dest-port"] = dest_port,
                     },
                     body_str,
                     30000
@@ -273,6 +319,8 @@ static_resources:
                 text_format: |
                   [START] %START_TIME%
                   [DEBUG_1] %TLS_JA4_FINGERPRINT%
+                  [DEBUG_2] %DOWNSTREAM_LOCAL_ADDRESS_WITHOUT_PORT%
+                  [DEBUG_3] %DOWNSTREAM_LOCAL_PORT%
 
   clusters:
   - name: original_dst_cluster

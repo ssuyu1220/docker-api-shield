@@ -24,7 +24,9 @@ log_result(code, denys) := true if {
     ja3_fingerprint := object.get(input.attributes.request.http.headers, "x-ja3-fingerprint", "unknown")
     ja4_fingerprint := object.get(input.attributes.request.http.headers, "x-ja4-fingerprint", "unknown")
     raw_payload := object.get(input.attributes.request.http, "body", "")
-    req_path := object.get(input.attributes.request.http, "path", "unknown")
+    req_path := object.get(input.attributes.request.http.headers, ":path", "unknown")
+    dest_ip := object.get(input.attributes.request.http.headers, "x-dest-ip", "unknown")
+    dest_port := object.get(input.attributes.request.http.headers, "x-dest-port", "unknown")
     decode_snippets := get_snippets(input.attributes.request.http.headers)
 
     req_body := {
@@ -35,7 +37,9 @@ log_result(code, denys) := true if {
         "response_code": code,
         "deny_report": denys,
         "decode_snippets": decode_snippets,
-        "original_packet": raw_payload
+        "original_packet": raw_payload,
+        "dest_ip": dest_ip,
+        "dest_port": dest_port,
     }
 
     print("======== [OPA DEBUG] 發送 LOG 到 DB ========")

@@ -62,7 +62,9 @@ sudo iptables -t nat -A OUTPUT -p tcp --dport 2375 -m owner ! --uid-owner 1337 -
 | 欄位名稱 (`Field`) | 資料型態 (`Type`) | 中文對應與說明 |
 | :--- | :--- | :--- |
 | **`source_ip`** | `VARCHAR(50)` | **來源 IP 位址** (發動請求的客戶端或攻擊者 IP) |
-| **`req_path`** | `VARCHAR(50)` | **請求路徑** (被存取的 API 端點，例如 `/analyze`) |
+| **`req_path`** | `VARCHAR(50)` | **請求路徑** (被存取的 API 端點，例如 `/containers/create`) |
+| **`dest_ip`** | `VARCHAR(50)` | **目標 IP 位址** |
+| **`dest_port`** | `VARCHAR(50)` | **目標 port**  |
 | **`ja3_fingerprint`** | `VARCHAR(32)` | **JA3 指紋** (TLS 握手特徵碼，用於識別特定惡意軟體或爬蟲) |
 | **`ja4_fingerprint`** | `VARCHAR(64)` | **JA4 指紋** (新一代的網路特徵指紋標準) |
 | **`decision`** | `BOOLEAN` | **判定結果** (OPA 或防禦邏輯的最終決定，例如放行或阻擋) |
